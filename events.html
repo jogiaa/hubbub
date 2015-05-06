@@ -1,0 +1,301 @@
+<!doctype html>
+
+<html>
+
+  <head>
+    <title>Hubbub - Backbone.js Example App from Backstop Media</title>
+    <link href='css/index.css' rel='stylesheet' type='text/css'>
+
+    <!-- Vendor. -->
+    <script src='vendor/jquery-1.11.2.js'></script>
+    <script src='vendor/underscore.js'></script>
+    <script src='vendor/backbone1.1.2.js'></script>
+    <script src='vendor/marked.js'></script>
+    
+    <script type="text/javascript">
+
+
+   /* Use the right tool for the job.
+	In general, on is best used when you need the context of the callback to be the object that is triggering the event. listenTo is best used when you need the context of the callback to be the object that is listening to the event.
+
+	Don't leak precious memory.
+	When a browser page is refreshed, the JavaScript memory from the previous page is wiped. In a single-page Backbone application, you don't have this convenience so memory management becomes important. If you use on, once, listenTo, or listenToOnce, you have added a callback to an internal array that will stay there until (a) the object is dereferenced in JavaScript or (b) you call off or stopListening accordingly. Keep this information in mind and clean up your events. A memory leak may not be noticable at first, but too much wasted memory will eventually have noticable, detrimental effects to your application, especially if it's long-running.
+*/
+
+    //
+		//binding change event on a model
+		/* There are chances of memory leaks when using ON. As a rule 
+		ON() is best used when you want the context of callback to be the object 
+		you're binding to and triggering from.
+
+		There can be third parameter CONTEXT. 
+		*/
+		indiEvent = function(){
+
+			var localModel = new Backbone.Model();
+			localModel.on('change' , function(){
+				console.log('model changed');
+			});
+
+			localModel.set('name', 'Gunner'); // "time to save the model!" 
+		};
+		indiEvent();
+		/*The 'all' event is used internally in Collections to proxy Model events.*/
+		//in you bind on 'ALL' this will be invoked on all ther events that can 
+		//be triggered 
+		//it will be invoked on all of that object's triggers with the name 
+		//of the event fired as the first argument. For example:
+		allEvents  = function () {
+
+			var bunnyModel = new Backbone.Model();
+			bunnyModel.on('all' , function(name){
+
+				console.log('invoked on '+ name);
+			}); 
+
+			bunnyModel.set('color','white'); // the onChange trigger is called 
+
+			bunnyModel.set('owner','zoya'); // the onChange trigger is called
+
+			bunnyModel.trigger('yoyo'); // we can specificlly call it for a event,which can be named anything
+		};
+
+		allEvents();
+
+
+		/* 
+			If the requirement is only to call a event only once. Then bind the event using 
+			ONCE. It automatically unbonds itself once it is called.
+		*/
+
+		onceEvent = function () {
+			var magicModel = new Backbone.Model();
+
+			magicModel.once('karma',function(){
+				console.log('karma called');	
+			});
+
+			magicModel.trigger('karma'); //event will b triggered
+			magicModel.trigger('karma'); // nothing will happen
+		};
+
+		onceEvent();
+
+		/*The events can b removeed from obj by using key word 
+		OFF. since lilngering call backs 
+		(zombie events) can lead to memory leaks. 
+		For example if a view has a event trigger associated with it , 
+		and that view has been removed , model doesnt know about the 
+		removal of the event. It will keep calling back 
+		the event. 
+
+		The OFF take the same amount of the args as the ON object. if
+		no argument is pass , every event lister is destryed. 
+
+
+		Remove a previously-bound callback function from an object. If no context is specified, all of the versions of the callback with different contexts will be removed. If no callback is specified, all callbacks for the event will be removed. If no event is specified, callbacks for all events will be removed.
+
+		// Removes just the `onChange` callback.
+		object.off("change", onChange);
+
+		// Removes all "change" callbacks.
+		object.off("change");
+
+		// Removes the `onChange` callback for all events.
+		object.off(null, onChange);
+
+		// Removes all callbacks for `context` for all events.
+		object.off(null, null, context);
+
+		// Removes all callbacks on `object`.
+		object.off();
+		Note that calling model.off(), for example, will indeed remove all events on the model — including events that Backbone uses for internal bookkeeping.
+		*/
+		simpleCallBack = function(){
+			console.log('a simple call back');
+		};
+
+		turningOffEvent = function (){
+			var turnOff = new Backbone.Model();
+			turnOff.on('change',simpleCallBack);
+
+			turnOff.set('name','jogi');
+
+			turnOff.off('change',simpleCallBack);
+
+			console.log('calling on change again');
+			turnOff.set('name','99');
+		};
+
+		turningOffEvent();
+
+
+		/*
+		****listenTo(obj, name, callback)
+		listenTo is what can be referred to as an inversion-of-control method. 
+
+		It comes handy when we are trying to trigger events on views on basis of model. 
+		For example if CollectionA or ModelA changes... then render the view. 
+
+		"As a general rule, use listenTo when the context of your callback should be the object you're listeningTo with."
+		
+
+		****listenToOnce(obj, name, callback)
+		its is same as ONCE. but instead of on triggering event it is on listening object
+		
+		****stopListening([obj][, name][, callback])
+		
+		stopListening is automatically called by a view when it is removed, so normally in the case of views you don't have to worry about doing this yourself.
+
+		Here is a common case with views:
+		
+		------------
+		modelA.on('change', view.renderA, view);
+		modelB.on('change', view.renderB, view);
+		modelC.on('change', view.renderC, view); 
+		
+		--Now the only way to turn off these views would be like so:
+
+		 	modelA.off('change', view.renderA, view);
+			modelB.off('change', view.renderB, view);
+			modelC.off('change', view.renderC, view); 
+		
+		--Ugh...tedious. Let's try the same thing with listenTo and stopListening:
+
+		 	view.listenTo(modelA, 'change', view.render);
+			view.listenTo(modelB, 'change', view.render);
+			view.listenTo(modelC, 'change', view.render);  
+		
+		--Now, since listenTo has been keeping track of objects being listened to (in this case modelA, modelB, and modelC), all bindings can be undone with a single stopListening:
+
+		 	view.stopListening(); 
+		
+
+		stopListening can also be passed any combination (or none) of the same arguments listenTo (or listenToOnce) receives to turn off callbacks accordingly.
+		*/
+
+
+
+		/******************
+		trigger(name[, arguments...])
+
+			
+
+		*/
+
+		/*Bonus fetures
+
+		method chaining
+
+
+		*/
+		fisrtLinkCallBack = function(){
+			console.log('calling first link');
+			secondLinkCallBack();
+		};
+
+		secondLinkCallBack = function(){
+			console.log('second link call back');
+		};
+
+
+		methodChaining = function(){
+
+			var aa = new Backbone.Model();
+
+			aa.on('change' , fisrtLinkCallBack);
+
+			aa.set('name','jogi');
+
+		};
+
+
+		methodChaining();
+
+
+		/*
+			a single call back can be triggered on multiple events.
+
+			second on wards parameters in trigger call are the arguments
+			which are to be send to call back function 
+		*/
+
+		namedCallBack = function (name){
+			console.log('Type I:'+name +  ' is called via trigger');
+		}
+
+		namedCallBackType2 = function (name){
+			console.log('Type II: '+name +  ' is called via trigger');
+		}
+		multiEvent = function(){
+
+			var tofan = new Backbone.Model();
+
+			tofan.on('coming going' , namedCallBack);
+
+			tofan.trigger('coming','coming');
+			tofan.trigger('going','going');
+
+
+			/*in single ON 
+			call you can assign multiple call backs to different objects*/
+
+			var muhabat = new Backbone.Model();
+			muhabat.on({
+				hawa:secondLinkCallBack,
+				pani:namedCallBack
+			});
+
+			muhabat.trigger('hawa');
+			muhabat.trigger('pani','pani sa nikalo gay');
+
+			/*
+				Event maps can also be used
+
+			*/
+
+			var mushkil = new Backbone.Model();
+			mushkil.on({
+				'andhera raat':namedCallBackType2,
+				'andhera kala':namedCallBack
+
+			});
+
+			//sequenc would be : 
+			// namedCallBackType2('Nighty night') , 
+			// namedCallBack('Nighty night') 
+			// namedCallBack ('Blacky black')
+			// namedCallBackType2('tanhai')
+			mushkil.trigger('andhera','Nighty night');
+			mushkil.trigger('kala','Blacky black');
+			mushkil.trigger('raat' , 'tanhai');
+
+			//we can use the single trigger call to trigger multiple events
+			mushkil.trigger({
+				'andhera kala':'yoyo',
+				raat : 'popo'
+			})
+		};
+
+		multiEvent();
+
+
+
+
+    </script>
+    <!-- Application files go here. -->
+
+    <!-- Models go here. -->
+
+    <!-- Collections go here. -->
+
+    <!-- Views go here. -->
+
+    <!-- Router goes here. -->
+  </head>
+
+  <body>
+    <div id="app-container"></div>
+  </body>
+
+</html>

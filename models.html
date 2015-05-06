@@ -1,0 +1,100 @@
+<html>
+
+  <head>
+    <title>Hubbub - Backbone.js Example App from Backstop Media</title>
+    <link href='css/index.css' rel='stylesheet' type='text/css'>
+
+    <!-- Vendor. -->
+    <script src='vendor/jquery-1.11.2.js'></script>
+    <script src='vendor/underscore.js'></script>
+    <script src='vendor/backbone1.1.2.js'></script>
+    <script src='vendor/marked.js'></script>
+    
+    <script type="text/javascript">
+
+    /*Backbone models
+
+      Data needs to be separetd from the views... Backbone is based on MV* design pattern
+      Models contains relevant data and validation. 
+      Main procipal is not to store DATA in DOM objects. 
+      A single Model can be used in multiple Views... and if values in Model changes 
+      the Views can be updated easily ... this can be done by using Events API 
+      listenTo/ stoplistening calls. 
+
+    */
+
+
+    /*****************
+    In current version of JS ther is no way of triggering event on bases of changed value in Model
+    This can be easily done by using BB's SET() and GET() methods.
+    */
+
+    namedEventCallBack = function(){
+      console.log('Triggering change on:'+this.id );
+    }
+
+    simpleGetSetChange = function(){
+
+      var sagar = new Backbone.Model({id:"sagar",title:"unique ones",category:"reading"});
+
+      sagar.on('change',namedEventCallBack);
+
+      sagar.set("category","read");
+
+      console.log("displaying property CATEGOTY:"+sagar.get("category"));
+
+      /*
+          HAS is used to check if a certain property is present in the model or not
+      */
+      if(sagar.has("title"))
+        console.log('this model has the title');
+
+    /*
+        ISNEW : is used to chek if the model is new or coming back from server
+        by default BB will look for property ID , though it can be set to anything else as well
+        in model call defination...but how ??? 
+    */
+
+    if(sagar.isNew())
+      console.log('new babay');
+    else
+      console.log('old hag');
+
+    /***********
+        ISNEW by default looks for ID attribute , but we can change it by extending the model 
+        and assigning new attribute name to 
+        idAttribute , the attribute name assigned to idAttribute will now act as 
+        ID when checking for ISNEW
+    */
+
+    var mean = Backbone.Model.extend({
+        idAttribute:"personID"
+    });
+
+    var geela = new mean({personID:"420",personName:"neela"});
+
+    if(geela.isNew())
+      console.log('new geela');
+    else
+      console.log('old geela');
+
+    var peela = new mean({personName:"peela"});
+
+    if(peela.isNew())
+      console.log('new peela');
+    else
+      console.log('old peela');
+
+    }
+
+    simpleGetSetChange();
+
+
+    </script>
+  </head>
+
+  <body>
+    <div id="app-container"></div>
+  </body>
+
+</html>
